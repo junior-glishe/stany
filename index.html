@@ -1,0 +1,759 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Stany POATHY — Manager | Portfolio</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<script>
+  tailwind.config = {
+    theme: {
+      extend: {
+        fontFamily: { sans: ['Inter', 'ui-sans-serif', 'system-ui', 'sans-serif'] },
+        colors: { ink: '#141412', sage: '#b9cf8f', cream: '#ece9e3' }
+      }
+    }
+  }
+</script>
+<style>
+  html { scroll-behavior: smooth; }
+  body { background: #ece9e3; font-family: 'Inter', sans-serif; }
+  .reveal { opacity: 0; transform: translateY(24px); transition: opacity .7s ease, transform .7s ease; }
+  .reveal.show { opacity: 1; transform: none; }
+  .no-scrollbar::-webkit-scrollbar { display: none; }
+  .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+  .card-img { transition: transform .6s ease; }
+  .project:hover .card-img { transform: scale(1.06); }
+  .hero-overlay { background: linear-gradient(90deg, rgba(20,16,12,.78) 0%, rgba(20,16,12,.35) 55%, rgba(20,16,12,.15) 100%), linear-gradient(0deg, rgba(20,16,12,.55) 0%, rgba(20,16,12,0) 45%); }
+
+  /* ===== Carrousels (Réalisations + Certificats) ===== */
+  .car-viewport { touch-action: pan-y; cursor: grab; }
+  .car-viewport.dragging { cursor: grabbing; }
+  .car-track { transition: transform .8s cubic-bezier(.22,1,.36,1); will-change: transform; }
+  .car-track.no-anim { transition: none; }
+  .car-slide { opacity: .35; transform: scale(.93); filter: saturate(.6);
+    transition: opacity .7s ease, transform .8s cubic-bezier(.22,1,.36,1), filter .7s ease; }
+  .car-slide.is-active { opacity: 1; transform: none; filter: none; }
+  .car-dot { height: 6px; width: 6px; border-radius: 999px; background: #d4d4d4; transition: width .5s cubic-bezier(.22,1,.36,1), background-color .4s ease; }
+  .car-dot.on { width: 28px; background: #141412; }
+  .car-count { display: inline-block; animation: carCount .5s cubic-bezier(.22,1,.36,1); }
+  .car-bar { transform-origin: left; transform: scaleX(0); }
+  .car-bar.run { animation: carBar var(--car-delay, 5s) linear forwards; }
+  .car-bar.paused { animation-play-state: paused; }
+  @keyframes carBar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes carCount { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+  /* Cartes certificats */
+  .cert-card { position: relative; transition: transform .45s cubic-bezier(.22,1,.36,1), box-shadow .45s ease, border-color .45s ease; }
+  .cert-card:hover { transform: translateY(-8px); box-shadow: 0 24px 40px -18px rgba(20,20,18,.28); border-color: #b9cf8f; }
+  .cert-card::after { content:""; position:absolute; inset:0; pointer-events:none;
+    background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.45) 50%, transparent 65%);
+    transform: translateX(-120%); transition: transform .9s ease; }
+  .cert-card:hover::after { transform: translateX(120%); }
+  .cert-medal { animation: certFloat 4.5s ease-in-out infinite; transition: transform .6s cubic-bezier(.22,1,.36,1); }
+  .cert-card:hover .cert-medal { transform: scale(1.15) rotate(-8deg); }
+  .cert-ring { animation: certSpin 22s linear infinite; }
+  .cert-link svg { transition: transform .35s ease; }
+  .cert-link:hover svg { transform: translate(3px,-3px); }
+  @keyframes certFloat { 0%,100% { translate: 0 0; } 50% { translate: 0 -7px; } }
+  @keyframes certSpin { to { transform: rotate(360deg); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .car-track, .car-slide, .cert-card, .car-dot, .reveal { transition: none !important; }
+    .cert-medal, .cert-ring, .car-count, .car-bar.run { animation: none !important; }
+  }
+</style>
+</head>
+<body class="text-ink antialiased">
+
+<!-- ================= HERO ================= -->
+<header id="accueil" class="relative min-h-[620px] md:min-h-[700px] lg:min-h-[760px] overflow-hidden bg-ink">
+  <img src="./images/STANY.jpeg"
+       alt="Stany POATHY, manager" class="absolute inset-0 w-full h-full object-cover object-[70%_20%]"
+       onerror="this.style.display='none'">
+  <div class="hero-overlay absolute inset-0"></div>
+
+  <!-- Navbar -->
+  <nav class="relative z-20 max-w-7xl mx-auto px-6 lg:px-10 pt-7 flex items-center justify-between text-white">
+    <a href="#accueil" class="flex items-center gap-2 font-semibold text-lg">
+      <svg width="28" height="28" viewBox="0 0 32 32" fill="currentColor" aria-hidden="true">
+        <circle cx="10" cy="10" r="6"/><circle cx="22" cy="10" r="6"/>
+        <circle cx="10" cy="22" r="6"/><circle cx="22" cy="22" r="6" opacity=".55"/>
+        <circle cx="16" cy="16" r="3" fill="#141412"/>
+      </svg>
+      Stany
+    </a>
+
+    <ul class="hidden lg:flex items-center gap-10 text-[13px] text-white/90">
+      <li><a href="#accueil" class="hover:text-sage transition">Accueil</a></li>
+      <li><a href="#services" class="hover:text-sage transition">Compétences</a></li>
+      <li><a href="#realisations" class="hover:text-sage transition">Réalisations</a></li>
+      <li><a href="#certificats" class="hover:text-sage transition">Certificats</a></li>
+      <li><a href="#parcours" class="hover:text-sage transition">Parcours</a></li>
+    </ul>
+
+    <div class="hidden lg:flex items-center gap-6 text-[13px]">
+      <a href="#apropos" class="hover:text-sage transition">À propos</a>
+      <a href="#contact" class="bg-white text-ink rounded-full px-6 py-2.5 font-medium hover:bg-sage transition">Me contacter</a>
+    </div>
+
+    <button id="menuBtn" class="lg:hidden p-2" aria-label="Menu">
+      <svg width="26" height="26" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 7h20M3 13h20M3 19h20"/></svg>
+    </button>
+  </nav>
+
+  <!-- Mobile menu -->
+  <div id="mobileMenu" class="hidden lg:hidden relative z-20 mx-6 mt-3 rounded-2xl bg-white/95 backdrop-blur p-5 text-sm shadow-xl">
+    <a href="#accueil" class="block py-2">Accueil</a>
+    <a href="#services" class="block py-2">Compétences</a>
+    <a href="#realisations" class="block py-2">Réalisations</a>
+    <a href="#certificats" class="block py-2">Certificats</a>
+    <a href="#parcours" class="block py-2">Parcours</a>
+    <a href="#apropos" class="block py-2">À propos</a>
+    <a href="#contact" class="mt-2 block text-center bg-ink text-white rounded-full py-2.5">Me contacter</a>
+  </div>
+
+  <!-- Hero content -->
+  <div class="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 pt-24 md:pt-36 lg:pt-44 pb-52 md:pb-64">
+    <h1 class="reveal text-white font-semibold leading-[1.02] tracking-tight text-5xl sm:text-6xl lg:text-7xl max-w-xl">
+      Stany POATHY, Manager
+    </h1>
+    <p class="reveal mt-5 text-white/80 text-sm md:text-base max-w-md">
+      Leadership, stratégie et performance : j'accompagne les équipes et les marques vers des résultats durables.
+    </p>
+    <a href="#realisations" class="reveal mt-8 inline-block bg-sage text-ink text-[13px] font-medium rounded-full px-7 py-2.5 hover:bg-white transition">
+      Découvrir mon travail
+    </a>
+  </div>
+</header>
+
+<!-- ================= MAIN CARD ================= -->
+<main class="relative z-30 -mt-40 md:-mt-48 px-3 sm:px-6 lg:px-10">
+  <div class="max-w-[1150px] mx-auto bg-white rounded-[2rem] shadow-2xl shadow-black/10 p-6 sm:p-9 lg:p-12">
+
+    <!-- Services row -->
+    <section id="services" class="grid lg:grid-cols-[1fr_1.1fr_1.7fr] gap-8 lg:gap-10 items-stretch">
+      <div class="reveal">
+        <p class="text-[11px] uppercase tracking-widest text-neutral-500 mb-5">Expertises</p>
+        <ul class="space-y-2.5 text-[15px] text-neutral-700">
+          <li class="flex gap-2"><span>·</span>Stratégie</li>
+          <li class="flex gap-2"><span>·</span>Gestion de projets</li>
+          <li class="flex gap-2 font-semibold text-ink"><span>·</span>Leadership</li>
+          <li class="flex gap-2"><span>·</span>Négociation</li>
+          <li class="flex gap-2"><span>·</span>Analyse de performance</li>
+          <li class="flex gap-2"><span>·</span>Reporting</li>
+          <li class="flex gap-2"><span>·</span>Relation client</li>
+          <li class="flex gap-2"><span>·</span>Formation d'équipes</li>
+        </ul>
+      </div>
+
+      <div class="reveal">
+        <p class="text-[11px] uppercase tracking-widest text-neutral-500 mb-5">Spécialité</p>
+        <span class="inline-block text-[11px] text-lime-700 mb-2">Pilotage d'équipes</span>
+        <h2 class="text-2xl lg:text-[26px] font-semibold leading-tight">Management<br>d'Équipes Performantes</h2>
+        <p class="mt-4 text-[13px] leading-relaxed text-neutral-500">
+          Je structure les équipes, clarifie les objectifs et mets en place des processus simples pour transformer chaque ambition en résultats concrets et mesurables.
+        </p>
+        <a href="#apropos" class="mt-6 inline-block bg-ink text-white text-[12px] rounded-full px-6 py-2.5 hover:bg-neutral-700 transition">En savoir plus</a>
+      </div>
+
+      <div class="reveal relative overflow-hidden rounded-3xl bg-ink text-white p-7 lg:p-8 min-h-[250px] flex flex-col justify-center">
+        <img src="https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&w=900&q=70" alt=""
+             class="absolute right-0 bottom-0 w-3/5 h-full object-cover opacity-30 [mask-image:linear-gradient(90deg,transparent,black)]"
+             onerror="this.style.display='none'">
+        <div class="relative z-10 max-w-sm">
+          <h3 class="text-3xl lg:text-[34px] font-semibold leading-tight">Construisons votre projet ensemble !</h3>
+          <p class="mt-4 text-[12px] leading-relaxed text-white/60">
+            Que vous cherchiez à structurer une équipe, relancer une activité ou piloter un projet stratégique, discutons de vos objectifs et trouvons la meilleure approche.
+          </p>
+          <a href="#contact" class="mt-6 inline-block bg-white text-ink text-[12px] font-medium rounded-full px-6 py-2.5 hover:bg-sage transition">Prendre rendez-vous</a>
+        </div>
+      </div>
+    </section>
+
+    <hr class="my-10 border-neutral-200">
+
+    <!-- Réalisations -->
+    <section id="realisations">
+      <div class="flex flex-wrap items-center justify-between gap-4 mb-7">
+        <div class="flex items-center gap-4">
+          <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight">Mes Réalisations</h2>
+          <span class="text-[11px] text-lime-700 border border-lime-300 bg-lime-50 rounded-full px-3 py-1">Portfolio</span>
+        </div>
+        <a href="#contact" class="text-[12px] border border-neutral-200 rounded-full px-5 py-2 hover:bg-ink hover:text-white transition">Voir tout</a>
+      </div>
+
+      <div class="reveal" id="rlCar" role="region" aria-roledescription="carrousel" aria-label="Mes réalisations" tabindex="0">
+        <div class="car-viewport overflow-hidden py-4 -my-4" data-viewport>
+          <div class="car-track flex -mx-2" data-track>
+        <div class="car-slide shrink-0 px-2"><article class="project h-full">
+          <div class="overflow-hidden rounded-2xl aspect-[4/3] bg-neutral-200">
+            <img class="card-img w-full h-full object-cover" src="https://i.pinimg.com/736x/1b/89/c4/1b89c4371ee0bd197741606daffa7120.jpg" alt="Réunion stratégique" onerror="this.style.display='none'">
+          </div>
+          <h3 class="mt-4 text-[14px] font-semibold leading-snug">Pilotage<br>stratégique</h3>
+          <p class="mt-2 text-[11px] leading-relaxed text-neutral-500">Définition de la vision et déploiement d'un plan d'action sur 12 mois.</p>
+          <!--<div class="mt-4 flex items-center gap-3 text-[10px] text-neutral-500">
+            <span class="w-5 h-5 rounded-full border border-neutral-300 grid place-items-center">▶</span><span>Étude de cas</span><span>2025</span>
+          </div>-->
+        </article></div>
+        <div class="car-slide shrink-0 px-2"><article class="project h-full">
+          <div class="overflow-hidden rounded-2xl aspect-[4/3] bg-neutral-200">
+            <img class="card-img w-full h-full object-cover" src="https://i.pinimg.com/1200x/83/28/23/8328231af44c1cd6fa5c4080bbf3bdf6.jpg" alt="Équipe commerciale" onerror="this.style.display='none'">
+          </div>
+          <h3 class="mt-4 text-[14px] font-semibold leading-snug">Développement<br>commercial</h3>
+          <p class="mt-2 text-[11px] leading-relaxed text-neutral-500">Réorganisation de l'équipe de vente et hausse du chiffre d'affaires.</p>
+          <!--<div class="mt-4 flex items-center gap-3 text-[10px] text-neutral-500">
+            <span class="w-5 h-5 rounded-full border border-neutral-300 grid place-items-center">▶</span><span>Résultats</span><span>2024</span>
+          </div>-->
+        </article></div>
+        <div class="car-slide shrink-0 px-2"><article class="project h-full">
+          <div class="overflow-hidden rounded-2xl aspect-[4/3] bg-neutral-200">
+            <img class="card-img w-full h-full object-cover" src="https://i.pinimg.com/1200x/be/64/b1/be64b1c98cd1104348dd90170687e39d.jpg" alt="Direction de projet" onerror="this.style.display='none'">
+          </div>
+          <h3 class="mt-4 text-[14px] font-semibold leading-snug">Direction<br>de projet</h3>
+          <p class="mt-2 text-[11px] leading-relaxed text-neutral-500">Coordination de plusieurs équipes pour livrer un projet dans les délais.</p>
+          <!--<div class="mt-4 flex items-center gap-3 text-[10px] text-neutral-500">
+            <span class="w-5 h-5 rounded-full border border-neutral-300 grid place-items-center">▶</span><span>Projet</span><span>2024</span>
+          </div>-->
+        </article></div>
+        <div class="car-slide shrink-0 px-2"><article class="project h-full">
+          <div class="overflow-hidden rounded-2xl aspect-[4/3] bg-neutral-200">
+            <img class="card-img w-full h-full object-cover" src="https://i.pinimg.com/736x/14/9c/df/149cdf66ad714361ae38575c132fa6da.jpg" alt="Formation d'équipe" onerror="this.style.display='none'">
+          </div>
+          <h3 class="mt-4 text-[14px] font-semibold leading-snug">Formation &amp;<br>coaching</h3>
+          <p class="mt-2 text-[11px] leading-relaxed text-neutral-500">Montée en compétences des collaborateurs et culture de la performance.</p>
+          <!--<div class="mt-4 flex items-center gap-3 text-[10px] text-neutral-500">
+            <span class="w-5 h-5 rounded-full border border-neutral-300 grid place-items-center">▶</span><span>Accompagnement</span><span>2023</span>
+          </div>-->
+        </article></div>
+        <div class="car-slide shrink-0 px-2"><article class="project h-full">
+          <div class="overflow-hidden rounded-2xl aspect-[4/3] bg-neutral-200">
+            <img class="card-img w-full h-full object-cover" src="https://i.pinimg.com/1200x/b6/95/fe/b695fe4ce322f6919331a5db3ff75724.jpg" alt="Relation client" onerror="this.style.display='none'">
+          </div>
+          <h3 class="mt-4 text-[14px] font-semibold leading-snug">Relation client<br>&amp; fidélisation</h3>
+          <p class="mt-2 text-[11px] leading-relaxed text-neutral-500">Mise en place d'un suivi client qui renforce la confiance et la rétention.</p>
+          <!--<div class="mt-4 flex items-center gap-3 text-[10px] text-neutral-500">
+            <span class="w-5 h-5 rounded-full border border-neutral-300 grid place-items-center">▶</span><span>Retour d'expérience</span><span>2023</span>
+          </div>-->
+        </article></div>
+      </div>
+        </div>
+        <div class="mt-6 flex items-center gap-5">
+          <p class="text-[12px] text-neutral-500 tabular-nums w-16"><span data-count class="car-count font-semibold text-ink">01</span> / <span data-total>01</span></p>
+          <div data-dots class="flex items-center gap-2"></div>
+          <div class="ml-auto h-[3px] w-24 sm:w-40 rounded-full bg-neutral-200 overflow-hidden">
+            <div data-bar class="car-bar h-full w-full rounded-full bg-sage"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- Certificats : carrousel -->
+    <section id="certificats" class="mt-12 border-t border-neutral-200 pt-10">
+      <div class="reveal flex flex-wrap items-center justify-between gap-4 mb-7">
+        <div class="flex items-center gap-4">
+          <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight">Mes Certificats</h2>
+          <span class="text-[11px] text-lime-700 border border-lime-300 bg-lime-50 rounded-full px-3 py-1">Certifié</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <button id="certPrev" class="w-10 h-10 rounded-full border border-neutral-200 grid place-items-center text-sm transition hover:bg-ink hover:text-white hover:scale-105 active:scale-95" aria-label="Certificat précédent">←</button>
+          <button id="certNext" class="w-10 h-10 rounded-full bg-ink text-white grid place-items-center text-sm transition hover:bg-sage hover:text-ink hover:scale-105 active:scale-95" aria-label="Certificat suivant">→</button>
+        </div>
+      </div>
+
+      <div class="reveal" id="certCar" role="region" aria-roledescription="carrousel" aria-label="Certificats" tabindex="0">
+        <div class="car-viewport overflow-hidden py-4 -my-4" data-viewport>
+          <div class="car-track flex -mx-2" data-track></div>
+        </div>
+        <div class="mt-6 flex items-center gap-5">
+          <p class="text-[12px] text-neutral-500 tabular-nums w-16"><span data-count class="car-count font-semibold text-ink">01</span> / <span data-total>01</span></p>
+          <div data-dots class="flex items-center gap-2"></div>
+          <div class="ml-auto h-[3px] w-24 sm:w-40 rounded-full bg-neutral-200 overflow-hidden">
+            <div data-bar class="car-bar h-full w-full rounded-full bg-sage"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- À propos -->
+    <section id="apropos" class="mt-12 grid md:grid-cols-[0.9fr_1.1fr] gap-8 lg:gap-14 items-center border-t border-neutral-200 pt-10">
+      <!-- Image : remplace le lien src par ta propre photo -->
+      <div class="reveal group relative overflow-hidden rounded-[2rem] aspect-[4/5] max-h-[520px] w-full bg-neutral-200">
+        <img src="./images/stany.jpeg"
+             alt="Stany POATHY, manager"
+             class="w-full h-full object-cover object-top transition-transform duration-[900ms] ease-out group-hover:scale-105"
+             onerror="this.style.display='none'">
+        <div class="absolute inset-x-0 bottom-0 h-1/3 bg-gradient-to-t from-black/40 to-transparent"></div>
+        <span class="absolute left-5 bottom-5 rounded-full bg-white/90 backdrop-blur px-4 py-1.5 text-[11px] font-medium">Stany POATHY · Manager</span>
+      </div>
+
+      <!-- Paragraphe -->
+      <div id="parcours" class="reveal">
+        <p class="text-[11px] uppercase tracking-widest text-neutral-500 mb-3">À propos</p>
+        <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight leading-tight">Un manager orienté résultats</h2>
+        <p class="mt-5 text-[14px] leading-[1.8] text-neutral-500">
+          Stany POATHY met son sens de l'organisation et son écoute au service des équipes et des clients. Après plus de huit ans passés à piloter des projets, structurer des équipes commerciales et accompagner la montée en compétences des collaborateurs, il défend une conviction simple : une équipe alignée, motivée et bien dirigée est le meilleur levier de croissance. Son approche repose sur des objectifs clairs, un suivi rigoureux et une communication transparente, pour transformer chaque ambition en résultats concrets et durables.
+        </p>
+        <a href="#contact" class="mt-7 inline-block bg-ink text-white text-[12px] rounded-full px-6 py-2.5 transition hover:bg-sage hover:text-ink">Me contacter</a>
+      </div>
+    </section>
+  </div>
+</main>
+
+<!-- ================= CONTACT ================= -->
+<section id="contact" class="max-w-[1150px] mx-auto px-3 sm:px-6 lg:px-10 mt-12 sm:mt-16 mb-16">
+  <div class="reveal grid lg:grid-cols-[0.85fr_1.15fr] gap-8 lg:gap-12 bg-white rounded-[2rem] shadow-2xl shadow-black/10 p-6 sm:p-9 lg:p-12">
+    <div>
+      <p class="text-[11px] uppercase tracking-widest text-neutral-500 mb-3">Contact</p>
+      <h2 class="text-3xl sm:text-4xl font-semibold tracking-tight leading-tight">Discutons de votre projet</h2>
+      <p class="mt-4 text-[13px] leading-relaxed text-neutral-500">
+        Une question, une collaboration ou une mission à confier ? Remplissez le formulaire, je vous réponds sous 48&nbsp;heures.
+      </p>
+
+      <ul class="mt-8 space-y-4 text-[13px] text-neutral-600">
+        <li class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-full bg-cream grid place-items-center text-ink" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>
+          </span>
+          <a href="mailto:presneypoathy@gmail.com" class="hover:text-ink transition">presneypoathy@gmail.com</a>
+        </li>
+        <li class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-full bg-cream grid place-items-center text-ink" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 0 1-.9-3.8 8.38 8.38 0 0 1 8.5-8.5 8.38 8.38 0 0 1 8.5 8.5z"/></svg>
+          </span>
+          <a href="https://wa.me/33605524980" target="_blank" rel="noopener" class="hover:text-ink transition">WhatsApp · +33 6 05 52 49 80</a>
+        </li>
+        <li class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-full bg-cream grid place-items-center text-ink" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-8.5 8.5 8.5 8.5 0 0 1-3.8-.9L3 21l1.9-5.7a8.5 8.5 0 0 1-.9-3.8 8.38 8.38 0 0 1 8.5-8.5 8.38 8.38 0 0 1 8.5 8.5z"/></svg>
+          </span>
+          <a href="https://www.linkedin.com/in/stanypoathy/" target="_blank" rel="noopener" class="hover:text-ink transition">LinkedIn · Stany POATHY</a>
+        </li>
+        <li class="flex items-center gap-3">
+          <span class="w-9 h-9 rounded-full bg-cream grid place-items-center text-ink" aria-hidden="true">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+          </span>
+          <span>Réponse sous 48&nbsp;heures</span>
+        </li>
+      </ul>
+    </div>
+
+    <form id="contactForm" novalidate class="space-y-4">
+      <div class="grid sm:grid-cols-2 gap-4">
+        <div>
+          <label for="cf-name" class="block text-[11px] font-medium text-neutral-600 mb-1.5">Nom complet <span class="text-red-500">*</span></label>
+          <input id="cf-name" name="name" type="text" autocomplete="name" required
+                 class="w-full rounded-xl border border-neutral-200 bg-cream/40 px-4 py-3 text-[13px] outline-none transition focus:border-sage focus:bg-white focus:ring-4 focus:ring-sage/20"
+                 placeholder="Votre nom">
+          <p data-error="name" class="hidden mt-1 text-[11px] text-red-500">Veuillez saisir votre nom.</p>
+        </div>
+        <div>
+          <label for="cf-email" class="block text-[11px] font-medium text-neutral-600 mb-1.5">Email <span class="text-red-500">*</span></label>
+          <input id="cf-email" name="email" type="email" autocomplete="email" required
+                 class="w-full rounded-xl border border-neutral-200 bg-cream/40 px-4 py-3 text-[13px] outline-none transition focus:border-sage focus:bg-white focus:ring-4 focus:ring-sage/20"
+                 placeholder="vous@exemple.com">
+          <p data-error="email" class="hidden mt-1 text-[11px] text-red-500">Veuillez saisir un email valide.</p>
+        </div>
+      </div>
+
+      <div>
+        <label for="cf-subject" class="block text-[11px] font-medium text-neutral-600 mb-1.5">Objet <span class="text-red-500">*</span></label>
+        <input id="cf-subject" name="subject" type="text" required
+               class="w-full rounded-xl border border-neutral-200 bg-cream/40 px-4 py-3 text-[13px] outline-none transition focus:border-sage focus:bg-white focus:ring-4 focus:ring-sage/20"
+               placeholder="Objet de votre message">
+        <p data-error="subject" class="hidden mt-1 text-[11px] text-red-500">Veuillez indiquer un objet.</p>
+      </div>
+
+      <div>
+        <label for="cf-message" class="block text-[11px] font-medium text-neutral-600 mb-1.5">Message <span class="text-red-500">*</span></label>
+        <textarea id="cf-message" name="message" rows="5" required
+                  class="w-full resize-none rounded-xl border border-neutral-200 bg-cream/40 px-4 py-3 text-[13px] outline-none transition focus:border-sage focus:bg-white focus:ring-4 focus:ring-sage/20"
+                  placeholder="Décrivez votre demande…"></textarea>
+        <p data-error="message" class="hidden mt-1 text-[11px] text-red-500">Veuillez écrire un message (10 caractères minimum).</p>
+      </div>
+
+      <div class="space-y-3 pt-1">
+        <p id="formStatus" role="status" aria-live="polite" class="text-[12px] font-medium"></p>
+        <div class="flex flex-col sm:flex-row sm:justify-end gap-3">
+          <button type="submit" data-channel="email"
+                  class="inline-flex items-center justify-center gap-2 bg-ink text-white text-[12px] font-medium rounded-full px-7 py-3 transition hover:bg-sage hover:text-ink disabled:opacity-60 disabled:cursor-not-allowed">
+            Envoyer par email
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>
+          </button>
+          <button type="submit" data-channel="whatsapp"
+                  class="inline-flex items-center justify-center gap-2 bg-[#25D366] text-white text-[12px] font-medium rounded-full px-7 py-3 transition hover:bg-[#1fbe57] disabled:opacity-60 disabled:cursor-not-allowed">
+            Envoyer par WhatsApp
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.6.1-.2.3-.7.9-.9 1-.1.2-.3.2-.5.1-.3-.1-1.2-.4-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.6-1.5-.8-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20z"/></svg>
+          </button>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+
+<!-- ================= FOOTER ================= -->
+<footer id="pied" class="bg-ink text-white pt-16 pb-8">
+  <div class="max-w-[1150px] mx-auto px-6 lg:px-10 grid sm:grid-cols-2 lg:grid-cols-[1.2fr_1fr_1fr_1.4fr_auto] gap-10">
+    <a href="#accueil" class="flex items-start gap-2 font-semibold text-lg">
+      <svg width="24" height="24" viewBox="0 0 32 32" aria-hidden="true">
+        <circle cx="10" cy="10" r="6" fill="#b9cf8f"/><circle cx="22" cy="10" r="6" fill="#b9cf8f"/>
+        <circle cx="10" cy="22" r="6" fill="#b9cf8f"/><circle cx="22" cy="22" r="6" fill="#b9cf8f" opacity=".55"/>
+        <circle cx="16" cy="16" r="3" fill="#141412"/>
+      </svg>
+      Stany
+    </a>
+
+    <div>
+      <h4 class="text-[13px] font-medium mb-4">Compétences</h4>
+      <ul class="space-y-2 text-[11px] text-white/45">
+        <li><a href="#services" class="hover:text-white">Stratégie</a></li>
+        <li><a href="#services" class="hover:text-white">Leadership</a></li>
+        <li><a href="#services" class="hover:text-white">Reporting</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 class="text-[13px] font-medium mb-4">Management</h4>
+      <ul class="space-y-2 text-[11px] text-white/45">
+        <li><a href="#realisations" class="hover:text-white">Équipes</a></li>
+        <li><a href="#realisations" class="hover:text-white">Projets</a></li>
+        <li><a href="#realisations" class="hover:text-white">Coaching</a></li>
+      </ul>
+    </div>
+
+    <div>
+      <h4 class="text-[13px] font-medium mb-4">Performance</h4>
+      <p class="text-[11px] leading-relaxed text-white/45 max-w-xs">
+        Des objectifs clairs, un suivi rigoureux et une communication transparente pour des résultats qui durent.
+      </p>
+      <!--<div class="mt-5 flex items-center gap-2">
+        <button id="prev" class="w-7 h-7 rounded-full bg-white text-ink grid place-items-center text-xs" aria-label="Précédent">←</button>
+        <span class="w-7 h-7 rounded-full bg-white/10 grid place-items-center text-xs text-white/50">·</span>
+        <span class="w-7 h-7 rounded-full bg-white text-ink grid place-items-center text-xs">●</span>
+        <button id="next" class="w-7 h-7 rounded-full bg-white/10 grid place-items-center text-xs hover:bg-white hover:text-ink transition" aria-label="Suivant">→</button>
+      </div>-->
+    </div>
+
+    <div class="lg:justify-self-end">
+      <a href="mailto:presneypoathy@gmail.com" class="inline-block border border-white/15 rounded-md px-5 py-2.5 text-[11px] text-white/60 hover:bg-white hover:text-ink transition">presneypoathy@gmail.com</a>
+    </div>
+  </div>
+
+  <div class="max-w-[1150px] mx-auto px-6 lg:px-10 mt-14 pt-6 border-t border-white/10 flex flex-wrap items-center justify-between gap-4 text-[10px] text-white/40">
+    <span class="flex items-center gap-2">
+      <span class="w-3 h-3 rounded-full border border-white/40"></span>
+      Disponible pour de nouvelles collaborations
+    </span>
+    <span>© <span id="year"></span> Stany POATHY. Tous droits réservés.</span>
+    <div class="flex items-center gap-4 text-white/60">
+      <a href="https://www.linkedin.com/in/stanypoathy/" aria-label="LinkedIn" class="hover:text-sage">in</a>
+      <a href="https://kouandzi-miette-junior-portofolio.vercel.app/" aria-label="Réseaux" class="hover:text-sage">Conçu par Kouandzi Miette Junior</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  document.getElementById('year').textContent = new Date().getFullYear();
+
+  const menuBtn = document.getElementById('menuBtn');
+  const mobileMenu = document.getElementById('mobileMenu');
+  if (menuBtn && mobileMenu) {
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      mobileMenu.classList.toggle('hidden');
+    });
+    mobileMenu.querySelectorAll('a').forEach(a => a.addEventListener('click', () => mobileMenu.classList.add('hidden')));
+    document.addEventListener('click', (e) => {
+      if (!mobileMenu.classList.contains('hidden') && !mobileMenu.contains(e.target) && !menuBtn.contains(e.target)) {
+        mobileMenu.classList.add('hidden');
+      }
+    });
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && !mobileMenu.classList.contains('hidden')) {
+        mobileMenu.classList.add('hidden');
+      }
+    });
+  }
+
+
+  const io = new IntersectionObserver((entries) => {
+    entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('show'); io.unobserve(e.target); } });
+  }, { threshold: 0.12 });
+  document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+  /* ===== Carrousel réutilisable ===== */
+  function createCarousel(root, opts) {
+    const viewport = root.querySelector('[data-viewport]');
+    const track = root.querySelector('[data-track]');
+    const dotsBox = root.querySelector('[data-dots]');
+    const countEl = root.querySelector('[data-count]');
+    const totalEl = root.querySelector('[data-total]');
+    const bar = root.querySelector('[data-bar]');
+    const slides = [...track.children];
+    const N = slides.length;
+    const DELAY = opts.delay || 5000;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+    const pad = n => String(n).padStart(2, '0');
+    bar.style.setProperty('--car-delay', DELAY + 'ms');
+
+    let per = 1, max = 0, i = 0, timer = null, inView = false, hovering = false;
+
+    function buildDots() {
+      dotsBox.innerHTML = '';
+      for (let d = 0; d <= max; d++) {
+        const b = document.createElement('button');
+        b.className = 'car-dot';
+        b.setAttribute('aria-label', 'Aller à la diapositive ' + (d + 1));
+        b.addEventListener('click', () => { go(d); start(); });
+        dotsBox.appendChild(b);
+      }
+      totalEl.textContent = pad(max + 1);
+    }
+
+    function render(animate = true) {
+      track.classList.toggle('no-anim', !animate);
+      track.style.transform = `translateX(${-i * 100 / per}%)`;
+      slides.forEach((s, k) => {
+        const on = k >= i && k < i + per;
+        s.style.transitionDelay = on && animate ? ((k - i) * 90) + 'ms' : '0ms';
+        s.classList.toggle('is-active', on);
+        s.setAttribute('aria-hidden', on ? 'false' : 'true');
+        s.querySelectorAll('a,button').forEach(a => a.tabIndex = on ? 0 : -1);
+      });
+      [...dotsBox.children].forEach((d, k) => d.classList.toggle('on', k === i));
+    }
+
+    function setCount() {
+      countEl.textContent = pad(i + 1);
+      countEl.classList.remove('car-count'); void countEl.offsetWidth; countEl.classList.add('car-count');
+    }
+
+    function go(n, animate = true) {
+      i = n > max ? 0 : n < 0 ? max : n;
+      render(animate); setCount();
+    }
+
+    function layout() {
+      per = opts.perView();
+      max = Math.max(0, N - per);
+      i = Math.min(i, max);
+      slides.forEach(s => s.style.flex = `0 0 ${100 / per}%`);
+      buildDots(); render(false);
+      countEl.textContent = pad(i + 1);
+    }
+
+    function stop() { clearTimeout(timer); timer = null; bar.classList.remove('run', 'paused'); bar.style.transform = 'scaleX(0)'; }
+    function start() {
+      stop();
+      if (reduce || !inView || hovering || max === 0) return;
+      bar.style.transform = ''; void bar.offsetWidth; bar.classList.add('run');
+      timer = setTimeout(() => { go(i + 1); start(); }, DELAY);
+    }
+    function pause() { hovering = true; clearTimeout(timer); bar.classList.add('paused'); }
+    function resume() { hovering = false; bar.classList.remove('paused'); start(); }
+
+    (opts.next || []).forEach(b => b && b.addEventListener('click', () => { go(i + 1); start(); }));
+    (opts.prev || []).forEach(b => b && b.addEventListener('click', () => { go(i - 1); start(); }));
+
+    root.addEventListener('mouseenter', pause);
+    root.addEventListener('mouseleave', resume);
+    root.addEventListener('focusin', pause);
+    root.addEventListener('focusout', resume);
+    root.addEventListener('keydown', e => {
+      if (e.key === 'ArrowRight') { go(i + 1); start(); }
+      if (e.key === 'ArrowLeft')  { go(i - 1); start(); }
+    });
+
+    new IntersectionObserver(es => { inView = es[0].isIntersecting; inView ? start() : stop(); }, { threshold: 0.35 }).observe(root);
+    document.addEventListener('visibilitychange', () => document.hidden ? stop() : start());
+
+    // Glisser à la souris ou au doigt
+    let startX = 0, dx = 0, down = false, moved = false;
+    viewport.addEventListener('pointerdown', e => { down = true; moved = false; startX = e.clientX; dx = 0; });
+    viewport.addEventListener('pointermove', e => {
+      if (!down) return;
+      dx = e.clientX - startX;
+      if (!moved && Math.abs(dx) > 6) { moved = true; viewport.classList.add('dragging'); viewport.setPointerCapture(e.pointerId); clearTimeout(timer); }
+      if (moved) {
+        track.classList.add('no-anim');
+        track.style.transform = `translateX(calc(${-i * 100 / per}% + ${dx}px))`;
+      }
+    });
+    const end = () => {
+      if (!down) return; down = false; viewport.classList.remove('dragging');
+      if (moved) { Math.abs(dx) > 60 ? go(i + (dx < 0 ? 1 : -1)) : go(i); start(); }
+    };
+    viewport.addEventListener('pointerup', end);
+    viewport.addEventListener('pointercancel', end);
+    viewport.addEventListener('click', e => { if (moved) { e.preventDefault(); e.stopPropagation(); moved = false; } }, true);
+    viewport.addEventListener('dragstart', e => e.preventDefault());
+
+    let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { layout(); start(); }, 150); });
+
+    layout();
+    return { go };
+  }
+
+  /* ===== Carrousel : Mes Réalisations ===== */
+  createCarousel(document.getElementById('rlCar'), {
+    perView: () => window.innerWidth >= 1024 ? 4 : window.innerWidth >= 640 ? 2 : 1,
+    prev: [document.getElementById('prev')],   // flèches du footer
+    next: [document.getElementById('next')],
+    delay: 6000
+  });
+
+  /* ===== Carrousel : Mes Certificats ===== */
+  // EXEMPLES : remplace titre, organisme, année, description et lien par tes vrais certificats.
+  const CERTIFICATS = [
+    { titre: "Projet Management Fundamentals", org: "IBM SkillsBuild", annee: "2026", desc: "Acquérir les fondamentaux du management de projet, planifier les activités et coordonner les ressources pour atteindre les objectifs fixés.", lien: "https://www.credly.com/badges/ea876e2c-f1ba-4aa7-b30c-f78cd66fdea3/linked_in_profile" },
+    { titre: "Getting Started with Generative AI", org: "IBM SkillsBuild", annee: "2026", desc: "Découvrir les bases de l’IA générative et apprendre à utiliser ses outils pour créer du contenu et améliorer sa productivité.", lien: "https://www.credly.com/badges/1a36c874-13a1-4dae-8ba3-358940935746/linked_in_profile" },
+    { titre: "Claude 101", org: "ANTHROPIC", annee: "2026", desc: "Découvrir les fonctionnalités de Claude, apprendre à rédiger des prompts efficaces et utiliser l’IA pour gagner en productivité et résoudre des problèmes.", lien: "https://verify.skilljar.com/c/bz9zdgjoy3nm" },
+    { titre: "Formation autoguidée sur la conciliation et la médiation des conflits du travail", org: "CIF", annee: "2026", desc: "Acquérir les bases de la conciliation et de la médiation pour prévenir les conflits du travail et faciliter la recherche de solutions amiables.", lien: "https://credentials.itcilo.org/b3217af1-9986-4339-8020-4ac181d8d34c#acc.evBXtcOp" },
+    { titre: "Préparer votre carrière dans l’IA générative, par Microsoft et LinkedIn Learning", org: "Microsoft & LinkedIn Learning", annee: "2026", desc: "Découvrir les opportunités de carrière dans l’IA générative et développer les compétences nécessaires pour évoluer dans ce domaine en pleine croissance.", lien: "https://www.linkedin.com/learning/certificates/823fd096bce42e4aeb31b4561da758c539335c645056c50b382e5c3aac442e9d" },
+    { titre: "Comprendre et appliquer les principes éthiques de l’IA générative", org: "LinkedIn Learning", annee: "2026", desc: "Comprendre les enjeux éthiques de l’IA générative et apprendre à utiliser ses outils de manière responsable, transparente et sécurisée.", lien: "https://www.linkedin.com/learning/certificates/8fbb3be4d9456f12658b85f8d0d77fa2210ae7811a1439cd3231143d0a4dbd61" },
+    { titre: "EF SET Certificat (C1 Advanced)", org: "EF SET", annee: "2026", desc: "Évaluer et certifier un niveau avancé en anglais (C1), attestant d’une excellente maîtrise de la compréhension écrite et orale.", lien: "https://cert.efset.org/en/QAHdgY" },
+    { titre: "Découvrir la Suite Studio Canva", org: "The Canva Team", annee: "2026", desc: "Découvrir les outils de Canva Studio pour concevoir des visuels professionnels, créer des présentations et réaliser des contenus créatifs.", lien: "https://www.canva.com/fr_fr/design-school/certification-award/b7c64ea3-efb0-4366-80c5-ef9494be6354" }
+  ];
+
+  (function () {
+    const THEMES = [
+      { bg: 'bg-ink text-sage',  badge: 'bg-white/10 text-white/80', ring: 'border-sage/40' },
+      { bg: 'bg-sage text-ink',  badge: 'bg-ink/10 text-ink',        ring: 'border-ink/25' },
+      { bg: 'bg-cream text-ink', badge: 'bg-ink/10 text-ink',        ring: 'border-ink/20' }
+    ];
+    const MEDAL = '<svg class="cert-medal w-16 h-16" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="32" cy="26" r="16"/><circle cx="32" cy="26" r="9" fill="currentColor" fill-opacity=".18" stroke="none"/><path d="M24 40l-5 18 13-7 13 7-5-18"/><path d="M27 26l4 4 7-8"/></svg>';
+    const ARROW = '<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 17L17 7M9 7h8v8"/></svg>';
+    const pad = n => String(n).padStart(2, '0');
+    const root = document.getElementById('certCar');
+    const N = CERTIFICATS.length;
+
+    root.querySelector('[data-track]').innerHTML = CERTIFICATS.map((c, k) => {
+      const t = THEMES[k % THEMES.length];
+      return `
+      <div class="car-slide shrink-0 px-2" aria-roledescription="diapositive" aria-label="${k + 1} sur ${N}">
+        <article class="cert-card h-full overflow-hidden rounded-3xl border border-neutral-200 bg-white flex flex-col">
+          <div class="relative h-44 ${t.bg} grid place-items-center overflow-hidden">
+            <span class="cert-ring absolute w-56 h-56 rounded-full border border-dashed ${t.ring}"></span>
+            <span class="absolute w-36 h-36 rounded-full border ${t.ring}"></span>
+            ${MEDAL}
+            <span class="absolute left-5 top-4 text-[11px] font-medium opacity-70 tabular-nums">${pad(k + 1)}</span>
+            <span class="absolute right-4 top-4 text-[10px] rounded-full px-3 py-1 ${t.badge}">${c.annee}</span>
+          </div>
+          <div class="p-6 flex flex-col flex-1">
+            <h3 class="text-[15px] font-semibold leading-snug">${c.titre}</h3>
+            <p class="mt-1 text-[12px] text-lime-700">${c.org}</p>
+            <p class="mt-3 text-[11px] leading-relaxed text-neutral-500 flex-1">${c.desc}</p>
+            <a href="${c.lien}" ${c.lien !== '#' ? 'target="_blank" rel="noopener"' : ''} class="cert-link mt-5 inline-flex items-center gap-2 text-[11px] font-medium hover:text-lime-700 transition-colors">Voir le certificat ${ARROW}</a>
+          </div>
+        </article>
+      </div>`;
+    }).join('');
+
+    createCarousel(root, {
+      perView: () => window.innerWidth >= 1024 ? 3 : window.innerWidth >= 640 ? 2 : 1,
+      prev: [document.getElementById('certPrev')],
+      next: [document.getElementById('certNext')],
+      delay: 5000
+    });
+  })();
+
+  /* ===== Formulaire de contact ===== */
+  (function () {
+    const form = document.getElementById('contactForm');
+    if (!form) return;
+    const status = document.getElementById('formStatus');
+    const buttons = form.querySelectorAll('button[type="submit"]');
+
+    const rules = {
+      name: v => v.trim().length >= 2,
+      email: v => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim()),
+      subject: v => v.trim().length >= 3,
+      message: v => v.trim().length >= 10
+    };
+
+    function setError(field, hasError) {
+      const input = form.elements[field];
+      const msg = form.querySelector(`[data-error="${field}"]`);
+      if (!input || !msg) return;
+      msg.classList.toggle('hidden', !hasError);
+      input.classList.toggle('border-red-400', hasError);
+      input.classList.toggle('focus:ring-red-100', hasError);
+      if (hasError) input.setAttribute('aria-invalid', 'true');
+      else input.removeAttribute('aria-invalid');
+    }
+
+    function validate() {
+      let valid = true;
+      Object.keys(rules).forEach(field => {
+        const ok = rules[field](form.elements[field].value);
+        setError(field, !ok);
+        if (!ok) valid = false;
+      });
+      return valid;
+    }
+
+    Object.keys(rules).forEach(field => {
+      const input = form.elements[field];
+      input.addEventListener('input', () => {
+        if (!input.classList.contains('border-red-400')) return;
+        if (rules[field](input.value)) setError(field, false);
+      });
+    });
+
+    buttons.forEach(btn => {
+      btn.addEventListener('click', e => {
+        e.preventDefault();
+        status.textContent = '';
+        status.className = 'text-[12px] font-medium';
+
+        if (!validate()) {
+          const firstInvalid = form.querySelector('[aria-invalid="true"]');
+          if (firstInvalid) firstInvalid.focus();
+          return;
+        }
+
+        const data = {
+          name: form.elements.name.value.trim(),
+          email: form.elements.email.value.trim(),
+          subject: form.elements.subject.value.trim(),
+          message: form.elements.message.value.trim()
+        };
+
+        buttons.forEach(b => { b.disabled = true; });
+        const original = btn.innerHTML;
+        btn.innerHTML = 'Ouverture…';
+
+        setTimeout(() => {
+          const body = `Message:\n${data.message}\n\nNom: ${data.name}\nEmail: ${data.email}`;
+          const email = 'presneypoathy@gmail.com';
+          const phone = '33605524980';
+          const channel = btn.dataset.channel;
+
+          if (channel === 'whatsapp') {
+            const text = `[Site - ${data.subject}]\n\n${data.message}\n\nDe: ${data.name} (${data.email})`;
+            const url = `https://wa.me/${phone}?text=${encodeURIComponent(text)}`;
+            window.open(url, '_blank', 'noopener');
+            status.textContent = 'Merci ' + data.name.split(' ')[0] + ' ! WhatsApp est ouvert avec votre message.';
+          } else {
+            const link = `mailto:${email}?subject=${encodeURIComponent('[Site] ' + data.subject)}&body=${encodeURIComponent(body)}`;
+            window.location.href = link;
+            status.textContent = 'Merci ' + data.name.split(' ')[0] + ' ! Votre client mail s\'ouvre.';
+          }
+
+          status.classList.add('text-lime-700');
+          form.reset();
+          Object.keys(rules).forEach(f => setError(f, false));
+          buttons.forEach(b => { b.disabled = false; b.innerHTML = b.dataset.channel === 'whatsapp'
+            ? 'Envoyer par WhatsApp <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M17.5 14.4c-.3-.1-1.7-.8-2-.9-.3-.1-.5-.1-.6.1-.2.3-.7.9-.9 1-.1.2-.3.2-.5.1-.3-.1-1.2-.4-2.3-1.4-.9-.8-1.4-1.7-1.6-2-.2-.3 0-.5.1-.6l.4-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5 0-.1-.6-1.5-.8-2-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.3.3-1 1-1 2.4s1 2.8 1.2 3c.1.2 2 3.1 4.9 4.3.7.3 1.2.5 1.6.6.7.2 1.3.2 1.8.1.6-.1 1.7-.7 1.9-1.4.2-.7.2-1.3.2-1.4-.1-.1-.3-.2-.6-.3z"/><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .8.8-2.9-.2-.3A8 8 0 1 1 12 20z"/></svg>'
+            : 'Envoyer par email <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16v12H4z"/><path d="m4 7 8 6 8-6"/></svg>'; });
+        }, 600);
+      });
+    });
+  })();
+</script>
+</body>
+</html>
